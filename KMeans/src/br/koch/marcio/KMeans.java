@@ -21,7 +21,7 @@ public class KMeans {
 		samples.add(Sample.of(6, 5));
 		
 		// k = 2
-		List<Sample> centroids = List.of(samples.get(0), samples.get(2));
+		List<Sample> centroids = List.of(samples.get(0).clone(), samples.get(2).clone());
 		centroids.get(0).setLabel(1);
 		centroids.get(1).setLabel(2);
 		
