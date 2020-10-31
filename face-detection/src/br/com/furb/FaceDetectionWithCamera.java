@@ -14,6 +14,7 @@ import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
@@ -21,7 +22,10 @@ import org.opencv.videoio.VideoCapture;
 
 public class FaceDetectionWithCamera {
 	
-	private CascadeClassifier classifier;
+	private CascadeClassifier faceClassifier;
+	private CascadeClassifier eyeClassifier;
+	private CascadeClassifier smileClassifier;
+	
 	private VideoCapture camera;
 	
 	private JFrame frame;
@@ -52,14 +56,36 @@ public class FaceDetectionWithCamera {
 	
 	private void detectAndShow(Mat img) {
 		
-		MatOfRect objects = new MatOfRect();
-		classifier.detectMultiScale(img, objects);
+		MatOfRect faceObjects = new MatOfRect();
+		faceClassifier.detectMultiScale(img, faceObjects);
 		
-		objects.toList().forEach(rect -> {
+		MatOfRect eyesObjects = new MatOfRect();
+		eyeClassifier.detectMultiScale(img, eyesObjects);
+		
+		MatOfRect smileObjects = new MatOfRect();
+		smileClassifier.detectMultiScale(img, smileObjects, 1.1, 10, 0, new Size(), new Size());
+		
+		faceObjects.toList().forEach(rect -> {
 			Point p1 = new Point(rect.x, rect.y);
 			Point p2 = new Point(rect.x + rect.width, rect.y + rect.height);
 			Rect rec = new Rect(p1, p2);
 			Scalar color = new Scalar(0, 0, 255);
+			Imgproc.rectangle(img, rec, color, 3);
+		});
+		
+		smileObjects.toList().forEach(rect -> {
+			Point p1 = new Point(rect.x, rect.y);
+			Point p2 = new Point(rect.x + rect.width, rect.y + rect.height);
+			Rect rec = new Rect(p1, p2);
+			Scalar color = new Scalar(0, 255, 0);
+			Imgproc.rectangle(img, rec, color, 3);
+		});
+		
+		eyesObjects.toList().forEach(rect -> {
+			Point p1 = new Point(rect.x, rect.y);
+			Point p2 = new Point(rect.x + rect.width, rect.y + rect.height);
+			Rect rec = new Rect(p1, p2);
+			Scalar color = new Scalar(255, 255, 255);
 			Imgproc.rectangle(img, rec, color, 3);
 		});
 		
@@ -68,8 +94,11 @@ public class FaceDetectionWithCamera {
 	}
 
 	private void init() {
-		final String cascadeFile = "D:\\mk\\OpenCV440\\install\\etc\\haarcascades\\haarcascade_frontalface_alt.xml";
-		classifier = new CascadeClassifier(cascadeFile);
+		final String cascadePath = "D:\\mk\\OpenCV440\\install\\etc\\haarcascades\\";
+		
+		faceClassifier = new CascadeClassifier(cascadePath + "haarcascade_frontalface_alt.xml");
+		eyeClassifier = new CascadeClassifier(cascadePath + "haarcascade_eye.xml");
+		smileClassifier = new CascadeClassifier(cascadePath + "haarcascade_smile.xml");
 		
 		camera = new VideoCapture();
 		camera.open(0);
