@@ -4,6 +4,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
+import org.opencv.face.EigenFaceRecognizer;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -24,7 +25,7 @@ public class PCA {
 		String path = "D:\\PCA\\dataset\\ORL\\";
 		List<Person> train = new ArrayList<>();
 		List<Person> test = new ArrayList<>();
-		int p = 10; // holdout de 70/30, treino/teste
+		int p = 7; // holdout de 70/30, treino/teste
 		loadDataset(path, train, test, p);
 		
 		//test.add(toPerson("D:\\dataset\\orl\\1002_182.jpg"));
@@ -40,6 +41,14 @@ public class PCA {
 		double minDistance = Double.MAX_VALUE;
 		double maxDistance = Double.MIN_VALUE;
 		double meanDistance = 0;
+		int corrects = 0;
+		
+		///// Using pure OpenCV ///////////////////////////////////////////////////
+		double minDistance2 = Double.MAX_VALUE;
+		double maxDistance2 = Double.MIN_VALUE;
+		double meanDistance2 = 0;
+		int corrects2 = 0;
+		///////////////////////////////////////////////////////////////////////////
 		
 		double minRec = Double.MAX_VALUE;
 		double maxRec = Double.MIN_VALUE;
@@ -52,6 +61,18 @@ public class PCA {
 			PCAEigenFace model = new PCAEigenFace(numComponents);
 			model.train(train);
 			
+			///// Using pure OpenCV ///////////////////////////////////////////////////
+			EigenFaceRecognizer model2 = EigenFaceRecognizer.create(numComponents);
+			List<Mat> src = new ArrayList<>(train.size());
+			Mat labels = new Mat(train.size(), 1, CvType.CV_32SC1);
+			for (int i = 0; i < train.size(); i++) {
+				Person person = train.get(i);
+				src.add(person.getData());
+				labels.put(i, 0, person.getLabel());
+			}
+			model2.train(src, labels);
+			///////////////////////////////////////////////////////////////////////////
+			
 			int truePositiveCount = 0;
 			int trueNegativesCount = 0;
 			for (Person personToTest: test) {
@@ -61,7 +82,28 @@ public class PCA {
 				double[] reconstructionError = new double[1];
 				
 				model.predict(testData, label, confidence, reconstructionError);
+				
+				///// Using pure OpenCV ///////////////////////////////////////////////////
+				
+				int[] label2 = new int[1];
+				double[] confidence2 = new double[1];
+				model2.predict(testData, label2, confidence2);
+				if (personToTest.getLabel() == label2[0]) {
+					corrects2++;
+				}
+				if (confidence2[0] < minDistance2) {
+					minDistance2 = confidence2[0]; 
+				}
+				if (confidence2[0] > maxDistance2) {
+					maxDistance2 = confidence2[0]; 
+				}
+				meanDistance2 += confidence2[0];
+				///////////////////////////////////////////////////////////////////////////
+				
 				boolean labelOK = label[0] == personToTest.getLabel(); 
+				if (labelOK) {
+					corrects++;
+				}
 				
 				if (reconstructionError[0] > MAX_REC) {
 					
@@ -136,6 +178,8 @@ public class PCA {
 			
 			double accuracy = (double)trues / test.size() * 100;
 			
+			
+			
 			System.out.format("numComponents:%d, Percentual de acerto:%.2f (%d de %d)%n", 
 					numComponents, accuracy, truePositiveCount, test.size());
 			
@@ -143,6 +187,13 @@ public class PCA {
 			
 			System.out.format("minDistance:%.2f, maxDistance:%.2f, meanDistance: %.2f%n", minDistance, maxDistance, meanDistance / test.size());
 			System.out.format("minRec:%.2f, maxRec:%.2f, meanRec: %.2f%n", minRec, maxRec, meanRec / test.size());
+			
+			System.out.println("corrects: " + corrects);
+			
+			System.out.println("**********  BY OpenCV **************");
+			System.out.println("corrects2: " + corrects2);
+			System.out.format("minDistance2:%.2f, maxDistance2:%.2f, meanDistance2: %.2f%n", 
+					minDistance2, maxDistance2, meanDistance2 / test.size());
 		}
 		
 	}

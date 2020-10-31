@@ -10,14 +10,14 @@ import org.opencv.imgcodecs.Imgcodecs;
 public class PCAEigenFace {
 	
 	private int numComponents;
-	private Mat mean;
+	private Mat mean; // Vai pra produção
 	private Mat diffs;
 	private Mat covariance;
 	private Mat eigenvectors;
 	private Mat eigenvalues;
-	private Mat eigenFaces;
-	private int[] labels;
-	private Mat projections;
+	private Mat eigenFaces; // Vai pra produção
+	private int[] labels; // Vai pra produção
+	private Mat projections; // Vai pra produção
 	
 	public PCAEigenFace(int numComponents) {
 		this.numComponents = numComponents;
